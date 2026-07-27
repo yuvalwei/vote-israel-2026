@@ -865,22 +865,52 @@ function PeopleTab() {
   );
 }
 
+// הסבר קצר לפני כל מקטע בשאלון — לחבר את מי שעונה למצב הקיים, לפני שהוא בוחר תשובה.
+const CATEGORY_INTRO = {
+  "ביטחון": "מאז 7 באוקטובר 2023 ישראל בעימות מתמשך, ושאלות הביטחון והגיוס נמצאות בליבת השיח הציבורי. השאלות הבאות עוסקות בגיוס חרדים, ביחס למדינה פלסטינית ולהתנחלויות, ובאחריות לכשלי 7 באוקטובר.",
+  "כלכלה": "יוקר המחיה נשאר גבוה, ותקציב המלחמה יצר מתח בין הוצאות ביטחוניות להוצאות אזרחיות. השאלות הבאות בודקות עד כמה אתם רוצים שהמדינה תתערב בשוק כדי להקל על משקי הבית.",
+  "דת ומדינה": "היחסים בין דת למדינה מבוססים על הסדר ותיק שכמעט לא השתנה, בזמן שהחברה הישראלית מגוונת יותר מבחינה דתית מתמיד. השאלות הבאות בודקות עד כמה אתם רוצים לשנות את האיזון הזה.",
+  "משילות": 'מ-2023 מתנהל מאבק על מאזן הכוחות בין הממשלה, הכנסת ובג"ץ, וטרם קמה ועדת חקירה ממלכתית ל-7 באוקטובר. השאלות הבאות בודקות איזה איזון אתם רוצים בין שלטון נבחר לביקורת שיפוטית.',
+  "חברה וזהות": "כ-20% מאזרחי ישראל הם ערבים, ומאז 7 באוקטובר רוב המפלגות היהודיות שוללות שיתוף פעולה קואליציוני עם מפלגות ערביות. השאלות הבאות עוסקות ביחסי יהודים-ערבים ובזהות המדינה.",
+};
+const CATEGORY_ORDER = ["ביטחון", "כלכלה", "דת ומדינה", "משילות", "חברה וזהות"];
+const SECURITY_IDENTITY_CATS = ["ביטחון", "חברה וזהות"];
+const SECURITY_MATCH_THRESHOLD = 40;
+
 function QuizTab({ onViewTopMatches }) {
   const [answers, setAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const answeredCount = Object.keys(answers).length;
   const setAnswer = (qid, v) => setAnswers((prev) => ({ ...prev, [qid]: v }));
+  // ציר הביטחון/זהות הוא הציר שקובע בפועל את ההצבעה בישראל הרבה יותר מנושאים חתכי-רוחב
+  // כמו רפורמה משפטית או כלכלה — בלעדי המשקל הזה, הסכמה על נושאי משילות/כלכלה בלבד
+  // (בלי שום קרבה לציר הלאומי) הייתה יכולה להעלות מפלגות באופן לא ריאלי.
+  const questionWeight = (cat) => (cat === "ביטחון" || cat === "חברה וזהות") ? 2 : 1;
   const results = useMemo(() => {
     const scores = {};
-    PARTIES.forEach((p) => (scores[p.id] = 0));
+    const secScores = {};
+    PARTIES.forEach((p) => { scores[p.id] = 0; secScores[p.id] = 0; });
     let maxPossible = 0;
+    let secMaxPossible = 0;
     QUESTIONS.forEach((q) => {
       const a = answers[q.id];
       if (a === undefined) return;
-      maxPossible += 4;
-      PARTIES.forEach((p) => { scores[p.id] += a * (q.stance[p.id] || 0); });
+      const w = questionWeight(q.cat);
+      maxPossible += 4 * w;
+      const isSecurity = SECURITY_IDENTITY_CATS.includes(q.cat);
+      if (isSecurity) secMaxPossible += 4;
+      PARTIES.forEach((p) => {
+        const contribution = a * (q.stance[p.id] || 0);
+        scores[p.id] += w * contribution;
+        if (isSecurity) secScores[p.id] += contribution;
+      });
     });
-    return PARTIES.map((p) => ({ ...p, score: scores[p.id], pct: maxPossible ? Math.round(((scores[p.id] + maxPossible) / (2 * maxPossible)) * 100) : 0 })).sort((a, b) => b.score - a.score);
+    return PARTIES.map((p) => ({
+      ...p,
+      score: scores[p.id],
+      pct: maxPossible ? Math.round(((scores[p.id] + maxPossible) / (2 * maxPossible)) * 100) : 0,
+      secPct: secMaxPossible ? Math.round(((secScores[p.id] + secMaxPossible) / (2 * secMaxPossible)) * 100) : null,
+    })).sort((a, b) => b.score - a.score);
   }, [answers]);
   const reset = () => { setAnswers({}); setShowResults(false); };
 
@@ -891,24 +921,32 @@ function QuizTab({ onViewTopMatches }) {
         <h3 style={{ fontFamily: "'Rubik', sans-serif", fontSize: "20px", margin: "0 0 6px" }}>ההתאמות שלך</h3>
         <p style={{ fontSize: "13px", color: "#6B7280", marginBottom: "16px", lineHeight: 1.6 }}>מבוסס על {answeredCount} תשובות מתוך {QUESTIONS.length}.</p>
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
-          {top.map((p, i) => (
-            <div key={p.id} style={{ background: "#FFFFFF", border: "1px solid #ECEAFB", borderRight: `5px solid ${p.color}`, borderRadius: "6px", padding: "12px 16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 900, fontSize: "15px", color: "#9CA3C4" }}>{i + 1}</span>
-                  <span style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 700, fontSize: "16.5px" }}>{p.name}</span>
+          {top.map((p, i) => {
+            const flagged = p.secPct !== null && p.secPct < SECURITY_MATCH_THRESHOLD;
+            return (
+              <div key={p.id} style={{ background: "#FFFFFF", border: "1px solid #ECEAFB", borderRight: `5px solid ${p.color}`, borderRadius: "6px", padding: "12px 16px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <span style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 900, fontSize: "15px", color: "#9CA3C4" }}>{i + 1}</span>
+                    <span style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 700, fontSize: "16.5px" }}>{p.name}</span>
+                  </div>
+                  <span style={{ fontSize: "14px", fontWeight: 700, color: p.color }}>{p.pct}%</span>
                 </div>
-                <span style={{ fontSize: "14px", fontWeight: 700, color: p.color }}>{p.pct}%</span>
+                <div style={{ background: "#EEEDFA", borderRadius: "4px", height: "8px", marginTop: "8px", overflow: "hidden" }}><div style={{ width: `${p.pct}%`, background: p.color, height: "100%" }} /></div>
+                {flagged && (
+                  <div style={{ marginTop: "8px", fontSize: "11.5px", color: "#B3204A", background: "#FFF0F3", borderRadius: "5px", padding: "6px 9px", lineHeight: 1.5 }}>
+                    ⚠️ פער משמעותי בעמדות ביטחון וזהות ({p.secPct}% התאמה בציר הזה בלבד) — ההתאמה הכללית גבוהה, אבל בנושאים האלה אתם רחוקים.
+                  </div>
+                )}
               </div>
-              <div style={{ background: "#EEEDFA", borderRadius: "4px", height: "8px", marginTop: "8px", overflow: "hidden" }}><div style={{ width: `${p.pct}%`, background: p.color, height: "100%" }} /></div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <button onClick={() => onViewTopMatches(top.slice(0, 3).map((p) => p.id))} style={{ width: "100%", padding: "13px", background: "#1857C4", color: "#fff", border: "none", borderRadius: "6px", fontSize: "14.5px", fontWeight: 700, fontFamily: "'Heebo', sans-serif", cursor: "pointer", marginBottom: "10px" }}>
           ראו את העמדות המלאות של 3 ההתאמות הכי גבוהות שלכם ←
         </button>
         <button onClick={reset} style={{ width: "100%", padding: "12px", background: "#FFFFFF", color: "#181433", border: "1.5px solid #ECEAFB", borderRadius: "6px", fontSize: "14px", fontFamily: "'Heebo', sans-serif", cursor: "pointer" }}>למלא שוב מההתחלה</button>
-        <p style={{ fontSize: "12px", color: "#9CA3C4", marginTop: "14px", lineHeight: 1.7 }}><strong>הבהרה חשובה:</strong> בשונה מטאב "עמדות", השאלון הזה מבוסס על הערכה מפושטת של Claude למיצוב אידיאולוגי כללי — לא על ציטוטים או מצעים ישירים. כלי אוריינטציה בלבד.</p>
+        <p style={{ fontSize: "12px", color: "#9CA3C4", marginTop: "14px", lineHeight: 1.7 }}><strong>הבהרה חשובה:</strong> בשונה מטאב "עמדות", השאלון הזה מבוסס על הערכה מפושטת של Claude למיצוב אידיאולוגי כללי — לא על ציטוטים או מצעים ישירים. שאלות בנושאי ביטחון וזהות משוקללות כפול, ומפלגה שההתאמה הכללית שלה גבוהה אך ההתאמה שלה בנושאי ביטחון וזהות ספציפית נמוכה מ-40% מקבלת סימון — היא לא מוסתרת, רק מסומנת. כלי אוריינטציה בלבד.</p>
       </div>
     );
   }
@@ -916,23 +954,28 @@ function QuizTab({ onViewTopMatches }) {
   return (
     <div>
       <p style={{ fontSize: "13.5px", color: "#3C3860", lineHeight: 1.7, marginBottom: "18px" }}>20 שאלות, 5 תחומים. אפשר לדלג על שאלה.</p>
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {QUESTIONS.map((q) => (
-          <div key={q.id} style={{ background: "#FFFFFF", border: "1px solid #ECEAFB", borderRadius: "6px", padding: "14px 16px" }}>
-            <div style={{ marginBottom: "10px" }}>
-              <span style={{ fontSize: "11px", color: "#B8960C", fontWeight: 700, letterSpacing: "0.03em" }}>{q.cat}</span>
-              <p style={{ margin: "4px 0 0", fontSize: "14.5px", lineHeight: 1.6 }}>{q.text}</p>
-            </div>
-            <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
-              {LIKERT.map((opt) => {
-                const selected = answers[q.id] === opt.v;
-                return <button key={opt.v} onClick={() => setAnswer(q.id, opt.v)} style={{ flex: "1 1 0", minWidth: "58px", padding: "9px 4px", fontSize: "10.5px", lineHeight: 1.3, borderRadius: "8px", border: selected ? "1.5px solid #181433" : "1.5px solid #ECEAFB", background: selected ? "#181433" : "#fff", color: selected ? "#FAFAFF" : "#3C3860", cursor: "pointer", fontFamily: "'Heebo', sans-serif", fontWeight: selected ? 700 : 500 }}>{opt.label}</button>;
-              })}
-            </div>
+      {CATEGORY_ORDER.map((cat) => (
+        <div key={cat} style={{ marginBottom: "26px" }}>
+          <h3 style={{ fontFamily: "'Rubik', sans-serif", fontWeight: 800, fontSize: "16px", margin: "0 0 8px", color: "#181433" }}>{cat}</h3>
+          <div style={{ background: "#F0F3FF", border: "1px solid #D6E0FF", borderRadius: "8px", padding: "11px 13px", marginBottom: "12px" }}>
+            <p style={{ margin: 0, fontSize: "12.5px", lineHeight: 1.65, color: "#2A2650" }}>{CATEGORY_INTRO[cat]}</p>
           </div>
-        ))}
-      </div>
-      <button onClick={() => setShowResults(true)} disabled={answeredCount === 0} style={{ width: "100%", marginTop: "20px", padding: "14px", background: answeredCount ? "#1857C4" : "#ECEAFB", color: "#fff", border: "none", borderRadius: "6px", fontSize: "15px", fontWeight: 700, fontFamily: "'Heebo', sans-serif", cursor: answeredCount ? "pointer" : "not-allowed" }}>הצג תוצאות ({answeredCount}/{QUESTIONS.length} נענו)</button>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {QUESTIONS.filter((q) => q.cat === cat).map((q) => (
+              <div key={q.id} style={{ background: "#FFFFFF", border: "1px solid #ECEAFB", borderRadius: "6px", padding: "14px 16px" }}>
+                <p style={{ margin: "0 0 10px", fontSize: "14.5px", lineHeight: 1.6 }}>{q.text}</p>
+                <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
+                  {LIKERT.map((opt) => {
+                    const selected = answers[q.id] === opt.v;
+                    return <button key={opt.v} onClick={() => setAnswer(q.id, opt.v)} style={{ flex: "1 1 0", minWidth: "58px", padding: "9px 4px", fontSize: "10.5px", lineHeight: 1.3, borderRadius: "8px", border: selected ? "1.5px solid #181433" : "1.5px solid #ECEAFB", background: selected ? "#181433" : "#fff", color: selected ? "#FAFAFF" : "#3C3860", cursor: "pointer", fontFamily: "'Heebo', sans-serif", fontWeight: selected ? 700 : 500 }}>{opt.label}</button>;
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+      <button onClick={() => setShowResults(true)} disabled={answeredCount === 0} style={{ width: "100%", marginTop: "6px", padding: "14px", background: answeredCount ? "#1857C4" : "#ECEAFB", color: "#fff", border: "none", borderRadius: "6px", fontSize: "15px", fontWeight: 700, fontFamily: "'Heebo', sans-serif", cursor: answeredCount ? "pointer" : "not-allowed" }}>הצג תוצאות ({answeredCount}/{QUESTIONS.length} נענו)</button>
     </div>
   );
 }
