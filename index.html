@@ -103,6 +103,9 @@ const PARTIES = [
   { id: "hakalkalit", name: "הכלכלית", leader: "פרופ' ירון זליכה", color: "#6B4E8E",
     bio: "מפלגה כלכלית חד-נושאית בראשות הכלכלן ירון זליכה (לשעבר החשב הכללי באוצר), הפועלת נגד מונופולים ולמען הוזלת יוקר המחיה. לא אותרו נתוני סקר עדכניים עם מנדטים — נחשבת למפלגה שולית ביחס לרוב המפלגות בדשבורד זה.",
     people: [{ name: "פרופ' ירון זליכה", role: "יו\"ר, לשעבר החשב הכללי במשרד האוצר" }] },
+  { id: "achdut", name: "האחדות", leader: "גלעד ארדן ויולי אדלשטיין", color: "#A67C3D",
+    bio: 'מפלגת ימין חדשה (אוגוסט 2026) — גלעד ארדן ויולי אדלשטיין פרשו מהליכוד בעקבות המחלוקת על חוק הגיוס לחרדים, ושואפים ל"ממשלה ציונית רחבה" שלא תלויה באף גוש. בסקרים נמדדת מתחת לאחוז החסימה (כ-0.7%–0.9%).',
+    people: [{ name: "גלעד ארדן", role: "יו\"ר, לשעבר שר ושגריר ישראל באו\"ם ובארה\"ב" }, { name: "יולי אדלשטיין", role: "מס' 2, לשעבר יו\"ר ועדת החוץ והביטחון" }] },
 ];
 
 /* כל עמדה: summary מסונתז ממספר מקורות + מערך sources לשקיפות */
@@ -440,23 +443,34 @@ const POSITIONS = {
       sources: [{ t: "מצע", v: "hakalkalit.org" }] },
     bitachon: null, giyus: null, chinuch: null, diur: null, briut: null, mimshal: null, arabs: null,
   },
+  achdut: {
+    giyus: { approach: "פרשו מהליכוד ספציפית בגלל נושא הגיוס — זה הסיפור המכונן של המפלגה, לא רק עמדה מדיניות אחת מני רבות.",
+      inPractice: 'אדלשטיין, בהכרזת המפלגה: "הצלחתי למנוע חוק השתמטות מסוכן... אך המאבק שלנו עדיין לא הסתיים. מי שמשרת — יקבל, ומי שלא ישרת לא יהיה זכאי להטבות ולתמריצים שהמדינה מעניקה." ארדן: "הקואליציה נכנעה לכל הדרישות של הסיעות החרדיות." סיסמת המפלגה: "ימין אמיתי. גיוס אמיתי".',
+      sources: [{ t: "הכרזת מפלגה", v: "מאקו, 7.8.2026" }] },
+    bitachon: { approach: "ימין מסורתי בענייני ביטחון והתיישבות — ההבדל מהליכוד הוא בגיוס, לא בביטחון עצמו.",
+      inPractice: 'ארדן: "ימין אמיתי זה התיישבות בארץ ישראל — וגם שירות לכולם" — משלב תמיכה בהתיישבות עם דרישה לשוויון בנטל, בניגוד למי שמציג את השניים כסותרים.',
+      sources: [{ t: "נאום השקה", v: "מאקו, 7.8.2026" }] },
+    kalkala: null, chinuch: null, diur: null, briut: null, dat: null, mimshal: null, arabs: null,
+  },
 };
 
 const POLLS = [
-  { id: "c12", label: 'חדשות 12 ("מדגם", ד"ר מנו גבע)', date: "13.7.2026", n: 504, note: "טעות דגימה ±4.4%",
-    seats: { yashar: 23, likud: 22, beyachad: 15, democrats: 10, beytenu: 10, otzma: 9, shas: 8, yahadut: 8, hadash: 5, rz: 5, raam: 5, balad: 0 } },
-  { id: "c13", label: "חדשות 13", date: "8.7.2026", n: null, note: null,
-    seats: { yashar: 23, likud: 22, beyachad: 15, democrats: 10, beytenu: 10, shas: 8, yahadut: 8, otzma: 8, hadash: 6, raam: 5, rz: 5, balad: 0 } },
-  { id: "c14", label: "חדשות 14 (NEXT DATA)", date: "תחילת יולי 2026", n: null, note: "ראו הבהרה למטה",
-    seats: { likud: 33, yashar: 20, shas: 11, beyachad: 9, democrats: 9, beytenu: 8, yahadut: 7, otzma: 7, hadash: 6, raam: 5, rz: 5, balad: 0 } },
+  { id: "c12", label: 'חדשות 12 ("מדגם")', date: "3.8.2026", n: null, note: null,
+    seats: { likud: 23, yashar: 23, beyachad: 14, democrats: 10, beytenu: 9, otzma: 7, shas: 7, yahadut: 8, rz: 5, hadash: 5, raam: 5, balad: 0, baytzioni: 4 } },
+  { id: "c13", label: 'חדשות 13 ("המדד")', date: "12.8.2026", n: null, note: null,
+    seats: { likud: 21, yashar: 23, beyachad: 12, democrats: 11, beytenu: 10, otzma: 8, shas: 7, yahadut: 8, rz: 5, hadash: 6, raam: 5, balad: 0, baytzioni: 4 } },
+  { id: "c14", label: "חדשות 14 (NEXT DATA)", date: "9.8.2026", n: 741, note: "ראו הבהרה למטה",
+    seats: { likud: 33, yashar: 23, shas: 10, democrats: 10, beytenu: 8, beyachad: 7, yahadut: 7, otzma: 6, rz: 6, hadash: 5, raam: 5, balad: 0 } },
 ];
 const C14_DISCLOSURE = 'לפי חשיפת עיתון "הארץ" (18.5.2026), ערוץ 14 הקים בעצמו את חברת הסקרים "Next Data" — הרשומה על שם נציג בעלי הערוץ — מבלי לגלות זאת לציבור. את התוצאות ניתח בשידורי הערוץ שלמה פילבר, מקורבו של נתניהו. מועצת העיתונות ציינה כי ייתכן שהדבר מפר את כללי גילוי הנאות. ערוץ 14 מסר כי הסקרים "נערכו בידי חברות סקרים אחרות". אנו מציגים את שלושת הערוצים זה לצד זה ומשאירים את השיפוט לקורא/ת.';
 
 // חלוקה לגושים — שלוש קטגוריות ברורות: קואליציה, אופוזיציה (כל המפלגות היהודיות-ציוניות
 // שאינן בקואליציה, כולל ישר וישראל ביתנו שטרם הכריעו לאיזה צד הן נוטות), ומפלגות ערביות.
+// בית ציוני וכחול לבן מקובצות בדיווחים עם גוש איזנקוט/השינוי. האחדות והכלכלית לא מקובצות
+// בכוונה — שתיהן מציגות עצמן כדוחות שיוך לגוש כלשהו, וזה עצמו חלק מהזהות הפוליטית שלהן.
 const BLOCS = [
   { id: "coalition", label: "קואליציה", color: "#1857C4", parties: ["likud", "rz", "otzma", "shas", "yahadut"] },
-  { id: "opposition", label: "אופוזיציה", color: "#B23A48", parties: ["yashar", "beyachad", "democrats", "beytenu"] },
+  { id: "opposition", label: "אופוזיציה", color: "#B23A48", parties: ["yashar", "beyachad", "democrats", "beytenu", "baytzioni", "kachollavan"] },
   { id: "arab", label: "מפלגות ערביות", color: "#2F7D4F", parties: ["hadash", "raam", "balad"] },
 ];
 const MAJORITY = 61;
